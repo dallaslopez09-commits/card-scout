@@ -8,6 +8,7 @@ export interface CardDisplayProps {
   onClick?: () => void;
   actionButton?: React.ReactNode;
   footerContent?: React.ReactNode;
+  imageUrl?: string;
 }
 
 export function getSportColor(sport: string) {
@@ -21,7 +22,7 @@ export function getSportColor(sport: string) {
   return "from-slate-700 to-slate-900";
 }
 
-export function CardDisplay({ card, onClick, actionButton, footerContent }: CardDisplayProps) {
+export function CardDisplay({ card, onClick, actionButton, footerContent, imageUrl }: CardDisplayProps) {
   const sportGradient = getSportColor(card.sport);
 
   return (
@@ -30,11 +31,14 @@ export function CardDisplay({ card, onClick, actionButton, footerContent }: Card
       onClick={onClick}
       data-testid={`card-item-${card.id}`}
     >
-      <div className={`h-48 w-full bg-gradient-to-br ${sportGradient} relative p-4 flex flex-col justify-between shrink-0`}>
-        {/* Placeholder image representation */}
-        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+')] bg-repeat"></div>
+      <div className={`h-48 w-full ${imageUrl ? 'bg-black' : `bg-gradient-to-br ${sportGradient}`} relative flex flex-col justify-between shrink-0`}>
+        {imageUrl ? (
+          <img src={imageUrl} alt={card.name} className="absolute inset-0 w-full h-full object-contain" />
+        ) : (
+          <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+')] bg-repeat"></div>
+        )}
         
-        <div className="relative z-10 flex justify-between items-start">
+        <div className="relative z-10 flex justify-between items-start p-4">
           <Badge variant="secondary" className="bg-white/90 text-black hover:bg-white border-0 font-bold uppercase tracking-wider text-[10px]">
             {card.year} {card.brand}
           </Badge>
@@ -45,11 +49,11 @@ export function CardDisplay({ card, onClick, actionButton, footerContent }: Card
           )}
         </div>
         
-        <div className="relative z-10">
-          <h3 className="text-white font-black text-xl leading-tight truncate">
+        <div className="relative z-10 p-4 pt-0">
+          <h3 className="text-white font-black text-xl leading-tight truncate drop-shadow-md">
             {card.player || card.name}
           </h3>
-          <p className="text-white/80 text-xs font-medium uppercase tracking-wide truncate">
+          <p className="text-white/80 text-xs font-medium uppercase tracking-wide truncate drop-shadow-md">
             {card.cardSet} {card.cardNumber ? `#${card.cardNumber}` : ''}
           </p>
         </div>

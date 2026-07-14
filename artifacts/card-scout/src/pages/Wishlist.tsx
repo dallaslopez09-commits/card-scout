@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGetWishlist, useRemoveFromWishlist, getGetWishlistQueryKey } from "@workspace/api-client-react";
 import { CardDisplay } from "@/components/CardDisplay";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, Target, MoveRight } from "lucide-react";
+import { Loader2, Trash2, Target, MoveRight, Search } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,6 +14,22 @@ export default function Wishlist() {
   const queryClient = useQueryClient();
   
   const [movingItem, setMovingItem] = useState<any | null>(null);
+  const [ebayData, setEbayData] = useState<Record<string, { medianPrice: number | null; searchQuery: string }>>({});
+  const [checkingEbayFor, setCheckingEbayFor] = useState<string | null>(null);
+
+  const checkEbay = async (cardId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCheckingEbayFor(cardId);
+    try {
+      const res = await fetch(`/api/cards/${cardId}/ebay-comps`, { credentials: 'include' });
+      const data = await res.json();
+      setEbayData(prev => ({ ...prev, [cardId]: data }));
+    } catch (err) {
+      toast.error("Failed to fetch eBay comps");
+    } finally {
+      setCheckingEbayFor(null);
+    }
+  };
 
   const handleRemove = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,6 +84,31 @@ export default function Wishlist() {
                         <span className="text-muted-foreground">Est. Market:</span>
                         <span className="font-bold">{formatCurrency(item.card.estimatedValue)}</span>
                       </div>
+                      
+                      {ebayData[item.card.id] ? (
+                        <div className="flex justify-between items-center text-sm font-mono pt-2 border-t border-border/50 bg-accent/20 -mx-4 px-4 pb-2">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            eBay Median:
+                          </span>
+                          <span className="font-bold text-primary">
+                            {ebayData[item.card.id].medianPrice !== null ? formatCurrency(ebayData[item.card.id].medianPrice) : 'N/A'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t border-border/50">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full text-xs h-7"
+                            onClick={(e) => checkEbay(item.card.id, e)}
+                            disabled={checkingEbayFor === item.card.id}
+                          >
+                            {checkingEbayFor === item.card.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Search className="w-3 h-3 mr-1" />}
+                            Check eBay
+                          </Button>
+                        </div>
+                      )}
+
                       {item.targetPrice && (
                         <div className="flex justify-between items-center text-sm font-mono pt-2 border-t border-border/50">
                           <span className="text-muted-foreground">Target Price:</span>
@@ -76,10 +117,17 @@ export default function Wishlist() {
                           </span>
                         </div>
                       )}
+                      
                       {isDiscounted && (
-                        <div className="mt-2 text-[10px] uppercase font-bold tracking-wider text-success bg-success/10 py-1 px-2 rounded text-center">
+                        <div className="mt-2 text-[10px] uppercase font-bold tracking-wider text-success bg-success/10 py-1 px-2 rounded text-center" data-testid={`below-target-${item.id}`}>
                           Below Target Price
                         </div>
+                      )}
+                      
+                      {ebayData[item.card.id]?.medianPrice !== null && item.targetPrice && ebayData[item.card.id].medianPrice! < item.targetPrice && (
+                         <div className="mt-2 text-[10px] uppercase font-bold tracking-wider text-success bg-success/10 py-1 px-2 rounded text-center">
+                           eBay Below Target
+                         </div>
                       )}
                     </div>
                   }

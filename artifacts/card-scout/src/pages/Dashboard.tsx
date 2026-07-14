@@ -1,17 +1,39 @@
-import { useGetCollectionSummary, useGetPortfolioHistory, useGetCollection, useGetWishlist } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useGetCollectionSummary, useGetPortfolioHistory, useGetCollection, useGetWishlist, getGetCollectionQueryKey, getGetCollectionSummaryQueryKey, getGetPortfolioHistoryQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { Loader2, TrendingUp, TrendingDown, ArrowUpRight, Plus, Star } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, ArrowUpRight, Plus, Star, RefreshCw } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CardDisplay } from "@/components/CardDisplay";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const { data: summary, isLoading: isLoadingSummary } = useGetCollectionSummary();
   const { data: history, isLoading: isLoadingHistory } = useGetPortfolioHistory();
   const { data: collection, isLoading: isLoadingCollection } = useGetCollection();
   const { data: wishlist, isLoading: isLoadingWishlist } = useGetWishlist();
+  
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshPrices = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/collection/refresh-prices', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      toast.success(`Updated ${data.updated} of ${data.total} cards from eBay`);
+      queryClient.invalidateQueries({ queryKey: getGetCollectionQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetCollectionSummaryQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
+    } catch {
+      toast.error('Refresh failed');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const isLoading = isLoadingSummary || isLoadingHistory || isLoadingCollection || isLoadingWishlist;
 
@@ -34,6 +56,15 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Portfolio overview and market movements.</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefreshPrices} 
+            disabled={isRefreshing}
+            className="font-semibold shadow-sm"
+          >
+            {isRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Refresh Prices
+          </Button>
           <Link href="/scan">
             <Button className="font-semibold shadow-sm hover-elevate">
               <Plus className="w-4 h-4 mr-2" /> Add Card

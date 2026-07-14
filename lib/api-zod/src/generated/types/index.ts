@@ -28,5 +28,7 @@ export * from './mobileTokenExchangeSuccess';
 export * from './portfolioSnapshot';
 export * from './portfolioSummary';
 export * from './searchCardsParams';
+export * from './uploadUrlRequest';
+export * from './uploadUrlResponse';
 export * from './wishlistItem';
 export * from './wishlistItemInput';
