@@ -8,6 +8,7 @@ import { formatCard } from "./cards";
 import { portfolioSnapshotsTable } from "@workspace/db";
 import { fetchEbayComps } from "../lib/ebay";
 import { logger } from "../lib/logger";
+import { getRefreshStatus, triggerUserRefreshIfStale } from "../lib/priceRefreshJob";
 
 const router = Router();
 
@@ -84,12 +85,20 @@ router.post("/collection/refresh-prices", async (req, res) => {
   res.json({ updated, failed, total: items.length });
 });
 
+// GET /collection/refresh-status
+router.get("/collection/refresh-status", async (req, res) => {
+  if (!(await requireAuth(req, res))) return;
+  res.json(getRefreshStatus());
+});
+
 // GET /collection
 router.get("/collection", async (req, res) => {
   if (!(await requireAuth(req, res))) return;
   const userId = req.user!.id;
   const items = await db.select().from(collectionItemsTable).leftJoin(cardsTable, eq(collectionItemsTable.cardId, cardsTable.id)).where(eq(collectionItemsTable.userId, userId)).orderBy(desc(collectionItemsTable.acquiredAt));
   res.json(items.map((i) => formatItem(i.collection_items, i.cards!)));
+  // Non-blocking: trigger eBay refresh for any stale items in the background
+  triggerUserRefreshIfStale(userId);
 });
 
 // POST /collection

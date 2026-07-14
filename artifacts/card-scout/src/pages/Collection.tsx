@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGetCollection, useGetCollectionSummary, useUpdateCollectionItem, useRemoveFromCollection, getGetCollectionSummaryQueryKey, getGetPortfolioHistoryQueryKey, getGetCollectionQueryKey } from "@workspace/api-client-react";
 import { CardDisplay } from "@/components/CardDisplay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowUpDown, Trash2, Edit2, Check, Download, UploadCloud } from "lucide-react";
+import { Loader2, ArrowUpDown, Trash2, Edit2, Check, Download, UploadCloud, Clock } from "lucide-react";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -26,7 +26,16 @@ function downloadCsv(csv: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function timeAgo(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 export default function Collection() {
+  const queryClient = useQueryClient();
   const { data: collection, isLoading: isCollectionLoading } = useGetCollection();
   const { data: summary, isLoading: isSummaryLoading } = useGetCollectionSummary();
   
@@ -39,6 +48,24 @@ export default function Collection() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   
   const isLoading = isCollectionLoading || isSummaryLoading;
+
+  const { data: refreshStatus } = useQuery({
+    queryKey: ['collection-refresh-status'],
+    queryFn: async () => {
+      const r = await fetch('/api/collection/refresh-status', { credentials: 'include' });
+      return r.json() as Promise<{ isRunning: boolean; lastRunAt: string | null; nextRunAt: string | null; lastResult: { updated: number; failed: number; total: number } | null }>;
+    },
+    refetchInterval: 30_000,
+  });
+
+  const prevIsRunning = useRef(false);
+  useEffect(() => {
+    if (prevIsRunning.current && !refreshStatus?.isRunning) {
+      queryClient.invalidateQueries({ queryKey: getGetCollectionQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetCollectionSummaryQueryKey() });
+    }
+    prevIsRunning.current = refreshStatus?.isRunning ?? false;
+  }, [refreshStatus?.isRunning, queryClient]);
 
   const handleExportCsv = () => {
     if (!collection || collection.length === 0) return;
@@ -121,6 +148,23 @@ export default function Collection() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">The Vault</h1>
         <p className="text-muted-foreground">Manage your owned assets and track their performance.</p>
+        
+        {/* Refresh Status Strip */}
+        <div className="mt-2 text-xs font-mono text-muted-foreground flex items-center gap-2">
+          {refreshStatus?.isRunning ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span>Syncing prices from eBay…</span>
+            </>
+          ) : refreshStatus?.lastRunAt ? (
+            <>
+              <Clock className="w-3 h-3" />
+              <span>Prices last synced {timeAgo(refreshStatus.lastRunAt)}</span>
+            </>
+          ) : (
+            <span>Prices will sync automatically</span>
+          )}
+        </div>
       </div>
 
       {/* Summary Strip */}
@@ -258,11 +302,21 @@ export default function Collection() {
                       {item.ebayPrice != null && (
                         <div className="flex justify-between items-center text-[10px] font-mono pt-1.5 text-muted-foreground border-t border-border/20">
                           <span>eBay Comp: <span className="font-semibold text-foreground">{formatCurrency(item.ebayPrice)}</span></span>
-                          {item.ebayCheckedAt && (
-                            <span className="opacity-70" title={new Date(item.ebayCheckedAt).toLocaleString()}>
-                              {new Date(item.ebayCheckedAt).toLocaleDateString()}
-                            </span>
-                          )}
+                          {item.ebayCheckedAt && (() => {
+                            const diffHours = (Date.now() - new Date(item.ebayCheckedAt).getTime()) / (1000 * 3600);
+                            let colorClass = "opacity-70";
+                            if (diffHours > 20) colorClass = "text-amber-500 font-medium opacity-100";
+                            else if (diffHours < 6) colorClass = "text-success font-medium opacity-100";
+                            
+                            return (
+                              <div className="flex items-center gap-1">
+                                <span className="opacity-50 hidden sm:inline">·</span>
+                                <span className={colorClass} title={new Date(item.ebayCheckedAt).toLocaleString()}>
+                                  {timeAgo(item.ebayCheckedAt)}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
