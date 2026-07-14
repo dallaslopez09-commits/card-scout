@@ -146,6 +146,9 @@ If you cannot identify the card clearly, set "identified": false and fill in wha
       description: result.description ?? null,
     };
 
+    // Save to DB so it can be added to collection/wishlist
+    await db.insert(cardsTable).values(card).onConflictDoNothing();
+
     res.json({
       identified: result.identified !== false,
       card: formatCard(card as any),
@@ -156,6 +159,39 @@ If you cannot identify the card clearly, set "identified": false and fill in wha
     logger.error({ err }, "Card scan failed");
     res.status(500).json({ error: "Card identification failed. Please try again." });
   }
+});
+
+// POST /cards — manual card creation
+router.post("/cards", async (req, res) => {
+  const { player, sport, year, brand, cardSet, cardNumber, estimatedValue, condition, rookieCard, serialNumbered, description } = req.body;
+
+  if (!sport || !brand || !cardSet) {
+    res.status(400).json({ error: "sport, brand, and cardSet are required" });
+    return;
+  }
+
+  const id = randomUUID();
+  const name = `${year ?? ""} ${brand} ${player ?? cardSet}${rookieCard ? " RC" : ""}`.trim();
+
+  const card = {
+    id,
+    name,
+    player: player ?? null,
+    sport,
+    year: year ?? null,
+    brand,
+    cardSet,
+    cardNumber: cardNumber ?? null,
+    imageUrl: null,
+    estimatedValue: String(estimatedValue ?? 0),
+    condition: condition ?? null,
+    rookieCard: rookieCard ?? false,
+    serialNumbered: serialNumbered ?? false,
+    description: description ?? null,
+  };
+
+  await db.insert(cardsTable).values(card);
+  res.status(201).json(formatCard(card as any));
 });
 
 // GET /cards/:id
