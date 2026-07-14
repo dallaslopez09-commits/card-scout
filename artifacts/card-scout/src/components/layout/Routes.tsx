@@ -8,6 +8,8 @@ import Collection from "@/pages/Collection";
 import Wishlist from "@/pages/Wishlist";
 import Scan from "@/pages/Scan";
 import { Loader2 } from "lucide-react";
+import DealFinder from "@/pages/DealFinder";
+import Sets from "@/pages/Sets";
 import NotFound from "@/pages/not-found";
 
 export function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -41,6 +43,8 @@ export default function Routes() {
       <Route path="/collection" component={() => <ProtectedRoute component={Collection} />} />
       <Route path="/wishlist" component={() => <ProtectedRoute component={Wishlist} />} />
       <Route path="/scan" component={() => <ProtectedRoute component={Scan} />} />
+      <Route path="/deals" component={() => <ProtectedRoute component={DealFinder} />} />
+      <Route path="/sets" component={() => <ProtectedRoute component={Sets} />} />
       <Route component={NotFound} />
     </Switch>
   );

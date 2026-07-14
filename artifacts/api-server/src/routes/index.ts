@@ -6,6 +6,8 @@ import { collectionRouter } from "./collection";
 import { wishlistRouter } from "./wishlist";
 import { portfolioRouter } from "./portfolio";
 import storageRouter from "./storage";
+import { setsRouter } from "./sets";
+import { dealsRouter } from "./deals";
 
 const router: IRouter = Router();
 
@@ -16,5 +18,7 @@ router.use(collectionRouter);
 router.use(wishlistRouter);
 router.use(portfolioRouter);
 router.use(storageRouter);
+router.use(setsRouter);
+router.use(dealsRouter);
 
 export default router;
