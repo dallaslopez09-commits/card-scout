@@ -57,15 +57,26 @@ router.post("/cards/scan", async (req, res) => {
     const Anthropic = (await import("@anthropic-ai/sdk")).default;
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const prompt = `You are an expert sports card identifier. Analyze this sports card image and extract:
-1. Player name, 2. Card year, 3. Brand/manufacturer, 4. Card set name, 5. Card number (if visible),
-6. Sport (Baseball/Basketball/Football/Hockey/Soccer), 7. Rookie card (true/false),
-8. Serial numbered (true/false), 9. Estimated market value in USD, 10. Brief description.
+    const prompt = `You are a sports card image reader. Your ONLY job is to read text and images that are physically printed on this card.
 
-Respond ONLY with valid JSON:
-{"identified":true,"player":"Name","year":1989,"brand":"Topps","cardSet":"Set","cardNumber":"#123","sport":"Baseball","rookieCard":false,"serialNumbered":false,"estimatedValue":25.00,"condition":"Near Mint","description":"Brief description","confidence":"high","notes":"Any notes"}
+CRITICAL RULES:
+- Only report values you can literally READ from the card image. Do NOT use your training knowledge to fill in missing details.
+- Year: read the year that is printed somewhere on the card (front, back, or set name). If no year is printed on the card, return null — do not guess based on the player or set.
+- Brand/manufacturer: read the logo or text on the card. Return null if not visible.
+- Card set name: read the set name printed on the card. Return null if not visible.
+- Card number: read the number (e.g. "#57" or "57 of 500"). Return null if not visible.
+- Player name: read the name printed on the card.
+- Sport: infer only from the image (uniform, equipment, field). Use "Baseball", "Basketball", "Football", "Hockey", or "Soccer".
+- Rookie card: only true if the card physically shows "RC", "Rookie", or "Rookie Card" text/logo.
+- Serial numbered: only true if you can see "X/Y" serial stamp (e.g. "047/100").
+- Do NOT estimate a market value — leave estimatedValue as null.
+- Description: briefly describe what you can see on the card (player image, design, colors).
+- confidence: "high" if you can read most fields clearly, "medium" if partially obscured, "low" if very hard to read.
 
-If you can't identify clearly, set "identified":false.`;
+Respond ONLY with this exact JSON (no markdown, no extra text):
+{"identified":true,"player":"Name or null","year":1989,"brand":"Brand or null","cardSet":"Set Name or null","cardNumber":"#57 or null","sport":"Baseball","rookieCard":false,"serialNumbered":false,"estimatedValue":null,"condition":null,"description":"What you see on the card","confidence":"high","notes":"Anything unclear or notable about the image"}
+
+If the image does not show a sports card at all, return: {"identified":false}`;
 
     const response = await anthropic.messages.create({
       model: "claude-opus-4-5",
@@ -81,12 +92,67 @@ If you can't identify clearly, set "identified":false.`;
     if (!jsonMatch) throw new Error("No JSON in response");
     const result = JSON.parse(jsonMatch[0]);
 
+    if (!result.identified) {
+      res.json({ identified: false, card: null, confidence: "low", notes: result.notes ?? "No card detected in image." });
+      return;
+    }
+
+    // Fetch real eBay sold prices immediately after identification
+    let ebayComps = null;
+    let marketPrice: number | null = null;
+    try {
+      ebayComps = await fetchEbayComps({
+        player: result.player,
+        year: result.year,
+        brand: result.brand,
+        cardSet: result.cardSet,
+        cardNumber: result.cardNumber,
+        rookieCard: result.rookieCard,
+      });
+      marketPrice = ebayComps.medianPrice ?? ebayComps.averagePrice ?? null;
+    } catch (ebayErr) {
+      logger.warn({ ebayErr }, "eBay comps fetch failed during scan — price will be null");
+    }
+
     const cardId = randomUUID();
-    const cardName = result.player ? `${result.year ?? ""} ${result.brand ?? ""} ${result.player}${result.rookieCard ? " RC" : ""}`.trim() : "Unknown Card";
-    const card = { id: cardId, name: cardName, player: result.player ?? null, sport: result.sport ?? "", year: result.year ?? null, brand: result.brand ?? "", cardSet: result.cardSet ?? "", cardNumber: result.cardNumber ?? null, imageUrl: null, estimatedValue: String(result.estimatedValue ?? 0), condition: result.condition ?? null, rookieCard: result.rookieCard ?? false, serialNumbered: result.serialNumbered ?? false, description: result.description ?? null };
+    const cardName = result.player
+      ? `${result.year ?? ""} ${result.brand ?? ""} ${result.player}${result.rookieCard ? " RC" : ""}`.trim()
+      : "Unknown Card";
+
+    const card = {
+      id: cardId,
+      name: cardName,
+      player: result.player ?? null,
+      sport: result.sport ?? "",
+      year: result.year ?? null,
+      brand: result.brand ?? "",
+      cardSet: result.cardSet ?? "",
+      cardNumber: result.cardNumber ?? null,
+      imageUrl: null,
+      // Use eBay market price if available, otherwise 0 (user must fill in)
+      estimatedValue: String(marketPrice ?? 0),
+      condition: result.condition ?? null,
+      rookieCard: result.rookieCard ?? false,
+      serialNumbered: result.serialNumbered ?? false,
+      description: result.description ?? null,
+    };
 
     await db.insert(cardsTable).values(card as any).onConflictDoNothing();
-    res.json({ identified: result.identified !== false, card: formatCard(card as any), confidence: result.confidence ?? null, notes: result.notes ?? null });
+
+    res.json({
+      identified: true,
+      card: formatCard(card as any),
+      confidence: result.confidence ?? null,
+      notes: result.notes ?? null,
+      // Send eBay data so the UI can show the source
+      ebayComps: ebayComps ? {
+        medianPrice: ebayComps.medianPrice,
+        averagePrice: ebayComps.averagePrice,
+        sampleSize: ebayComps.sampleSize,
+        searchQuery: ebayComps.searchQuery,
+        topComp: ebayComps.comps[0] ?? null,
+      } : null,
+    });
   } catch (err) {
     logger.error({ err }, "Card scan failed");
     res.status(500).json({ error: "Card identification failed. Please try again." });

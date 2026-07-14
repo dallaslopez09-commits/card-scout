@@ -3,12 +3,20 @@ import { useScanCard, getGetCollectionQueryKey, getGetWishlistQueryKey, getGetCo
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Scan as ScanIcon, Upload, Loader2, Camera, AlertTriangle, PenLine, CheckCircle2 } from "lucide-react";
+import { Scan as ScanIcon, Upload, Loader2, Camera, AlertTriangle, PenLine, CheckCircle2, TrendingUp } from "lucide-react";
 import { Card as CardType } from "@workspace/api-client-react/api.schemas";
 import { toast } from "sonner";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+
+interface EbayComps {
+  medianPrice: number | null;
+  averagePrice: number | null;
+  sampleSize: number;
+  searchQuery: string;
+  topComp: { title: string; price: number; soldDate: string; listingUrl: string } | null;
+}
 
 // Editable fields that represent a card
 interface CardFields {
@@ -63,14 +71,20 @@ interface CardFormProps {
   onChange: (fields: CardFields) => void;
   heading: string;
   subheading?: string;
+  ebayComps?: EbayComps | null;
   onConfirm: () => void;
   onCancel: () => void;
   isSaving: boolean;
 }
 
-function CardForm({ fields, onChange, heading, subheading, onConfirm, onCancel, isSaving }: CardFormProps) {
+function CardForm({ fields, onChange, heading, subheading, ebayComps, onConfirm, onCancel, isSaving }: CardFormProps) {
   const set = (key: keyof CardFields, val: string | boolean) =>
     onChange({ ...fields, [key]: val });
+
+  const missingWarnings: string[] = [];
+  if (!fields.year) missingWarnings.push("Year not found on card — please verify and enter");
+  if (!fields.brand) missingWarnings.push("Brand not found on card — please verify and enter");
+  if (!fields.cardSet) missingWarnings.push("Card set not found — please verify and enter");
 
   return (
     <div className="space-y-5">
@@ -145,7 +159,21 @@ function CardForm({ fields, onChange, heading, subheading, onConfirm, onCancel, 
         </div>
 
         <div className="space-y-1">
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Est. Value ($)</Label>
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Market Value ($)</Label>
+          {ebayComps && ebayComps.sampleSize > 0 ? (
+            <div className="flex flex-col gap-0.5 pb-1">
+              <span className="inline-flex items-center gap-1 w-fit text-xs font-mono bg-success/10 text-success border border-success/20 px-2 py-0.5 rounded-sm">
+                <TrendingUp className="w-3 h-3" /> eBay median: {formatCurrency((ebayComps.medianPrice ?? ebayComps.averagePrice) || 0)} · {ebayComps.sampleSize} recent sales
+              </span>
+              <span className="text-[10px] text-muted-foreground">Search: "{ebayComps.searchQuery}"</span>
+            </div>
+          ) : (
+            <div className="pb-1">
+              <span className="inline-flex items-center gap-1 w-fit text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-sm">
+                <AlertTriangle className="w-3 h-3" /> No eBay sales found — enter value manually
+              </span>
+            </div>
+          )}
           <Input
             data-testid="input-estimated-value"
             type="number"
@@ -192,10 +220,21 @@ function CardForm({ fields, onChange, heading, subheading, onConfirm, onCancel, 
         <Button variant="outline" className="flex-1" onClick={onCancel} disabled={isSaving}>
           Cancel
         </Button>
-        <Button className="flex-1 font-bold uppercase tracking-wider" onClick={onConfirm} disabled={isSaving}>
-          {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          Confirm Card
-        </Button>
+        <div className="flex-1 flex flex-col justify-end">
+          {missingWarnings.length > 0 && (
+            <div className="space-y-1 pb-2">
+              {missingWarnings.map(w => (
+                <p key={w} className="flex items-center gap-1.5 text-xs text-amber-500">
+                  <AlertTriangle className="w-3 h-3 shrink-0" /> {w}
+                </p>
+              ))}
+            </div>
+          )}
+          <Button className="w-full font-bold uppercase tracking-wider" onClick={onConfirm} disabled={isSaving}>
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Confirm Card
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -329,7 +368,7 @@ function SaveDialog({ card, open, onOpenChange }: SaveDialogProps) {
 type Stage =
   | { kind: "idle" }
   | { kind: "scanning" }
-  | { kind: "edit"; fields: CardFields; imagePreview: string | null; aiNotes: string | null }
+  | { kind: "edit"; fields: CardFields; imagePreview: string | null; aiNotes: string | null; ebayComps: EbayComps | null }
   | { kind: "manual" }
   | { kind: "done"; card: CardType };
 
@@ -357,20 +396,26 @@ export default function Scan() {
         {
           onSuccess: (result) => {
             if (result.card) {
+              const comps = result.ebayComps as EbayComps | null;
               setStage({
                 kind: "edit",
                 fields: cardToFields(result.card),
                 imagePreview: base64String,
                 aiNotes: result.notes ?? null,
+                ebayComps: comps ?? null,
               });
-              toast.success("Card identified — review and confirm details.");
+              if (comps && comps.sampleSize > 0) {
+                toast.success(`Card identified · eBay price sourced from ${comps.sampleSize} recent sales`);
+              } else {
+                toast.success("Card identified · No eBay price found, enter value manually");
+              }
             } else {
-              setStage({ kind: "edit", fields: EMPTY_FIELDS, imagePreview: base64String, aiNotes: result.notes ?? null });
+              setStage({ kind: "edit", fields: EMPTY_FIELDS, imagePreview: base64String, aiNotes: result.notes ?? null, ebayComps: null });
               toast.error("Could not identify card. Fill in the details manually.");
             }
           },
           onError: () => {
-            setStage({ kind: "edit", fields: EMPTY_FIELDS, imagePreview: base64String, aiNotes: null });
+            setStage({ kind: "edit", fields: EMPTY_FIELDS, imagePreview: base64String, aiNotes: null, ebayComps: null });
             toast.error("Scan failed. You can fill in the details manually.");
           },
         }
@@ -441,6 +486,7 @@ export default function Scan() {
         <div className="bg-card border border-border rounded-lg p-6 shadow-sm max-w-2xl">
           <EditStageForm
             initialFields={EMPTY_FIELDS}
+            ebayComps={null}
             heading="Manual Card Entry"
             subheading="Type in the card details and confirm to add it to your library."
             onConfirm={handleConfirmCard}
@@ -530,6 +576,7 @@ export default function Scan() {
           <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
             <EditStageForm
               initialFields={stage.fields}
+              ebayComps={stage.ebayComps}
               onConfirm={handleConfirmCard}
               onCancel={handleReset}
               isSaving={isSaving}
@@ -572,6 +619,7 @@ function EditStageForm({
   initialFields,
   heading = "Review & Correct",
   subheading = "AI filled these in — fix anything that's wrong, then confirm.",
+  ebayComps,
   onConfirm,
   onCancel,
   isSaving,
@@ -579,6 +627,7 @@ function EditStageForm({
   initialFields: CardFields;
   heading?: string;
   subheading?: string;
+  ebayComps?: EbayComps | null;
   onConfirm: (f: CardFields) => void;
   onCancel: () => void;
   isSaving: boolean;
@@ -590,6 +639,7 @@ function EditStageForm({
       onChange={setFields}
       heading={heading}
       subheading={subheading}
+      ebayComps={ebayComps}
       onConfirm={() => onConfirm(fields)}
       onCancel={onCancel}
       isSaving={isSaving}
