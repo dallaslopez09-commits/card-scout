@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Card Scout API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
+  - name: cards
+    description: Card search and scanning
+  - name: collection
+    description: User card collection
+  - name: wishlist
+    description: User wishlist
+  - name: portfolio
+    description: Portfolio value tracking
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +33,466 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the returnTo path on success or /api/login on failure.
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+            default: /
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+      responses:
+        '200':
+          description: Session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Token did not contain usable claims.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Token exchange failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+
+  /cards/search:
+    get:
+      operationId: searchCards
+      tags: [cards]
+      summary: Search for sports cards
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sport
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: ["integer", "null"]
+        - name: brand
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardSearchResponse"
+
+  /cards/scan:
+    post:
+      operationId: scanCard
+      tags: [cards]
+      summary: AI-powered card identification from image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardScanInput"
+      responses:
+        "200":
+          description: Scanned card details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardScanResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /cards/{id}:
+    get:
+      operationId: getCard
+      tags: [cards]
+      summary: Get card details by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /collection:
+    get:
+      operationId: getCollection
+      tags: [collection]
+      summary: Get user's card collection
+      responses:
+        "200":
+          description: Collection items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    post:
+      operationId: addToCollection
+      tags: [collection]
+      summary: Add a card to the collection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /collection/summary:
+    get:
+      operationId: getCollectionSummary
+      tags: [collection]
+      summary: Get portfolio summary (value, gain/loss)
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /collection/{id}:
+    put:
+      operationId: updateCollectionItem
+      tags: [collection]
+      summary: Update a collection item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionItemUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: removeFromCollection
+      tags: [collection]
+      summary: Remove a card from the collection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteSuccess"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /wishlist:
+    get:
+      operationId: getWishlist
+      tags: [wishlist]
+      summary: Get user's wishlist
+      responses:
+        "200":
+          description: Wishlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WishlistItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    post:
+      operationId: addToWishlist
+      tags: [wishlist]
+      summary: Add a card to the wishlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WishlistItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /wishlist/{id}:
+    delete:
+      operationId: removeFromWishlist
+      tags: [wishlist]
+      summary: Remove a card from the wishlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteSuccess"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /portfolio/history:
+    get:
+      operationId: getPortfolioHistory
+      tags: [portfolio]
+      summary: Get portfolio value history snapshots
+      responses:
+        "200":
+          description: Portfolio history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioSnapshot"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token — Bearer <sid>.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +502,267 @@ components:
       required:
         - status
 
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    DeleteSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    Card:
+      type: object
+      required: [id, name, sport, year, brand, cardSet, estimatedValue]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        player:
+          type: ["string", "null"]
+        sport:
+          type: string
+        year:
+          type: ["integer", "null"]
+        brand:
+          type: string
+        cardSet:
+          type: string
+        cardNumber:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        estimatedValue:
+          type: number
+        condition:
+          type: ["string", "null"]
+        rookieCard:
+          type: ["boolean", "null"]
+        serialNumbered:
+          type: ["boolean", "null"]
+        description:
+          type: ["string", "null"]
+
+    CardSearchResponse:
+      type: object
+      required: [cards, total, page, limit]
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    CardScanInput:
+      type: object
+      required: [imageBase64]
+      properties:
+        imageBase64:
+          type: string
+          description: Base64-encoded image data (without data URI prefix)
+        mimeType:
+          type: string
+          default: "image/jpeg"
+
+    CardScanResult:
+      type: object
+      required: [identified, card]
+      properties:
+        identified:
+          type: boolean
+        card:
+          $ref: "#/components/schemas/Card"
+        confidence:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    CollectionItem:
+      type: object
+      required: [id, userId, cardId, card, purchasePrice, currentValue, quantity, acquiredAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        cardId:
+          type: string
+        card:
+          $ref: "#/components/schemas/Card"
+        purchasePrice:
+          type: number
+        currentValue:
+          type: number
+        quantity:
+          type: integer
+        condition:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        acquiredAt:
+          type: string
+          format: date-time
+
+    CollectionItemInput:
+      type: object
+      required: [cardId, purchasePrice, quantity]
+      properties:
+        cardId:
+          type: string
+        purchasePrice:
+          type: number
+        quantity:
+          type: integer
+          default: 1
+        condition:
+          type: string
+        notes:
+          type: string
+
+    CollectionItemUpdate:
+      type: object
+      properties:
+        purchasePrice:
+          type: number
+        currentValue:
+          type: number
+        quantity:
+          type: integer
+        condition:
+          type: string
+        notes:
+          type: string
+
+    PortfolioSummary:
+      type: object
+      required: [totalValue, totalCost, totalGain, totalGainPercent, itemCount]
+      properties:
+        totalValue:
+          type: number
+        totalCost:
+          type: number
+        totalGain:
+          type: number
+        totalGainPercent:
+          type: number
+        itemCount:
+          type: integer
+        topGainer:
+          oneOf:
+            - $ref: "#/components/schemas/CollectionItem"
+            - type: "null"
+        topLoser:
+          oneOf:
+            - $ref: "#/components/schemas/CollectionItem"
+            - type: "null"
+
+    WishlistItem:
+      type: object
+      required: [id, userId, cardId, card, addedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        cardId:
+          type: string
+        card:
+          $ref: "#/components/schemas/Card"
+        targetPrice:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        addedAt:
+          type: string
+          format: date-time
+
+    WishlistItemInput:
+      type: object
+      required: [cardId]
+      properties:
+        cardId:
+          type: string
+        targetPrice:
+          type: number
+        notes:
+          type: string
+
+    PortfolioSnapshot:
+      type: object
+      required: [id, userId, totalValue, totalCost, snapshotDate]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        totalValue:
+          type: number
+        totalCost:
+          type: number
+        snapshotDate:
+          type: string
+          format: date-time
