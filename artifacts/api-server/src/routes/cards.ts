@@ -59,14 +59,14 @@ router.post("/cards/scan", async (req, res) => {
 
   const { imageBase64, mimeType = "image/jpeg" } = parsed.data;
 
-  if (!process.env.OPENAI_API_KEY) {
-    res.status(400).json({ error: "OpenAI API key not configured" });
+  if (!process.env.ANTHROPIC_API_KEY) {
+    res.status(400).json({ error: "Anthropic API key not configured" });
     return;
   }
 
   try {
-    const OpenAI = (await import("openai")).default;
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const Anthropic = (await import("@anthropic-ai/sdk")).default;
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const prompt = `You are an expert sports card identifier. Analyze this sports card image and extract:
 1. Player name
@@ -100,24 +100,24 @@ Respond with ONLY valid JSON in this format:
 
 If you cannot identify the card clearly, set "identified": false and fill in what you can.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 1000,
+    const response = await anthropic.messages.create({
+      model: "claude-opus-4-5",
+      max_tokens: 1024,
       messages: [
         {
           role: "user",
           content: [
-            { type: "text", text: prompt },
             {
-              type: "image_url",
-              image_url: { url: `data:${mimeType};base64,${imageBase64}` },
+              type: "image",
+              source: { type: "base64", media_type: mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp", data: imageBase64 },
             },
+            { type: "text", text: prompt },
           ],
         },
       ],
     });
 
-    const content = response.choices[0]?.message?.content ?? "{}";
+    const content = response.content[0]?.type === "text" ? response.content[0].text : "{}";
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
