@@ -10,6 +10,8 @@ import Scan from "@/pages/Scan";
 import { Loader2 } from "lucide-react";
 import DealFinder from "@/pages/DealFinder";
 import Sets from "@/pages/Sets";
+import Insurance from "@/pages/Insurance";
+import CardTimeline from "@/pages/CardTimeline";
 import NotFound from "@/pages/not-found";
 
 export function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -45,6 +47,8 @@ export default function Routes() {
       <Route path="/scan" component={() => <ProtectedRoute component={Scan} />} />
       <Route path="/deals" component={() => <ProtectedRoute component={DealFinder} />} />
       <Route path="/sets" component={() => <ProtectedRoute component={Sets} />} />
+      <Route path="/insurance" component={() => <ProtectedRoute component={Insurance} />} />
+      <Route path="/collection/:id/timeline" component={() => <ProtectedRoute component={CardTimeline} />} />
       <Route component={NotFound} />
     </Switch>
   );

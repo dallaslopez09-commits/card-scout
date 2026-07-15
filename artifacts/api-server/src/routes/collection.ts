@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { collectionItemsTable, cardsTable } from "@workspace/db";
+import { collectionItemsTable, cardsTable, cardPriceHistoryTable } from "@workspace/db";
 import { AddToCollectionBody, UpdateCollectionItemBody, UpdateCollectionItemParams, RemoveFromCollectionParams } from "@workspace/api-zod";
 import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -113,11 +113,19 @@ router.post("/collection", async (req, res) => {
   const card = await db.select().from(cardsTable).where(eq(cardsTable.id, cardId)).limit(1);
   if (!card[0]) { res.status(404).json({ error: "Card not found" }); return; }
 
+  const itemId = randomUUID();
   const [item] = await db.insert(collectionItemsTable).values({
-    id: randomUUID(), userId, cardId, purchasePrice: String(purchasePrice), currentValue: card[0].estimatedValue,
+    id: itemId, userId, cardId, purchasePrice: String(purchasePrice), currentValue: card[0].estimatedValue,
     quantity, condition: condition ?? null, notes: notes ?? null,
     gradingFee: "0", shippingFee: "0", otherFees: "0",
   }).returning();
+
+  // Log acquisition event in price history
+  await db.insert(cardPriceHistoryTable).values({
+    id: randomUUID(), collectionItemId: itemId, userId,
+    price: String(purchasePrice), source: "acquired",
+    note: `Acquired${condition ? ` · ${condition}` : ""}`,
+  });
 
   res.status(201).json(formatItem(item, card[0]));
 });
@@ -147,7 +155,45 @@ router.put("/collection/:id", async (req, res) => {
 
   const [updated] = await db.update(collectionItemsTable).set(update).where(and(eq(collectionItemsTable.id, paramParsed.data.id), eq(collectionItemsTable.userId, userId))).returning();
   const card = await db.select().from(cardsTable).where(eq(cardsTable.id, updated.cardId)).limit(1);
+
+  // Log manual value change in price history
+  if (body.currentValue !== undefined) {
+    await db.insert(cardPriceHistoryTable).values({
+      id: randomUUID(), collectionItemId: updated.id, userId,
+      price: String(body.currentValue), source: "manual",
+      note: "Manual value update",
+    });
+  }
+
   res.json(formatItem(updated, card[0]!));
+});
+
+// GET /collection/:id/timeline
+router.get("/collection/:id/timeline", async (req, res) => {
+  if (!(await requireAuth(req, res))) return;
+  const userId = req.user!.id;
+
+  const item = await db.select().from(collectionItemsTable)
+    .where(and(eq(collectionItemsTable.id, req.params.id), eq(collectionItemsTable.userId, userId)))
+    .limit(1);
+  if (!item[0]) { res.status(404).json({ error: "Not found" }); return; }
+
+  const card = await db.select().from(cardsTable).where(eq(cardsTable.id, item[0].cardId)).limit(1);
+
+  const history = await db.select().from(cardPriceHistoryTable)
+    .where(and(eq(cardPriceHistoryTable.collectionItemId, req.params.id), eq(cardPriceHistoryTable.userId, userId)))
+    .orderBy(desc(cardPriceHistoryTable.recordedAt));
+
+  res.json({
+    item: formatItem(item[0], card[0]!),
+    history: history.map(h => ({
+      id: h.id,
+      price: Number(h.price),
+      source: h.source,
+      note: h.note,
+      recordedAt: h.recordedAt.toISOString(),
+    })),
+  });
 });
 
 // DELETE /collection/:id

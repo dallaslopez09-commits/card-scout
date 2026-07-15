@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { LayoutDashboard, Search, Layers, Star, Scan, LogOut, Loader2, Tag, Trophy } from "lucide-react";
+import { LayoutDashboard, Search, Layers, Star, Scan, LogOut, Loader2, Tag, Trophy, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ShellProps {
@@ -20,6 +20,7 @@ export function Shell({ children }: ShellProps) {
     { label: "AI Scan", href: "/scan", icon: Scan },
     { label: "Deal Finder", href: "/deals", icon: Tag },
     { label: "Sets", href: "/sets", icon: Trophy },
+    { label: "Insurance", href: "/insurance", icon: ShieldCheck },
   ];
 
   return (

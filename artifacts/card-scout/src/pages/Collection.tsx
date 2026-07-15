@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useUpload } from "@workspace/object-storage-web";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLocation } from "wouter";
 
 function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -41,6 +42,7 @@ export default function Collection() {
   
   const [sortField, setSortField] = useState<'value' | 'acquired' | 'gain' | 'roi'>('value');
   const [sortDesc, setSortDesc] = useState(true);
+  const [, navigate] = useLocation();
   
   const [sportFilter, setSportFilter] = useState('All');
   const [conditionFilter, setConditionFilter] = useState('');
@@ -325,6 +327,15 @@ export default function Collection() {
                 
                 {/* Overlay actions */}
                 <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  <Button 
+                    size="icon" 
+                    variant="secondary" 
+                    className="h-8 w-8 rounded-full shadow-md hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => navigate(`/collection/${item.id}/timeline`)}
+                    title="View price history"
+                  >
+                    <Clock className="w-4 h-4" />
+                  </Button>
                   <Button 
                     size="icon" 
                     variant="secondary" 

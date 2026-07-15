@@ -11,7 +11,7 @@
  */
 
 import { db } from "@workspace/db";
-import { collectionItemsTable, cardsTable, portfolioSnapshotsTable } from "@workspace/db";
+import { collectionItemsTable, cardsTable, portfolioSnapshotsTable, cardPriceHistoryTable } from "@workspace/db";
 import { eq, or, lt, isNull, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -98,6 +98,16 @@ export async function refreshStaleItems(olderThanHours = STALE_HOURS): Promise<{
               updatedAt: now,
             })
             .where(eq(collectionItemsTable.id, item.id));
+          // Log price history
+          await db.insert(cardPriceHistoryTable).values({
+            id: randomUUID(),
+            collectionItemId: item.id,
+            userId: item.userId,
+            price: String(price),
+            source: "ebay",
+            note: `eBay median from ${result.comps.length} sold comp${result.comps.length !== 1 ? "s" : ""}`,
+            recordedAt: now,
+          });
           updated++;
         } else {
           // Still mark as checked so we don't hammer eBay for cards with no listings
