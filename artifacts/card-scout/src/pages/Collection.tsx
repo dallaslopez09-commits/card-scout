@@ -7,6 +7,7 @@ import { Loader2, ArrowUpDown, Trash2, Edit2, Check, Download, UploadCloud, Cloc
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/apiFetch";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +55,7 @@ export default function Collection() {
   const { data: refreshStatus } = useQuery({
     queryKey: ['collection-refresh-status'],
     queryFn: async () => {
-      const r = await fetch('/api/collection/refresh-status', { credentials: 'include' });
+      const r = await apiFetch('/api/collection/refresh-status');
       return r.json() as Promise<{ isRunning: boolean; lastRunAt: string | null; nextRunAt: string | null; lastResult: { updated: number; failed: number; total: number } | null }>;
     },
     refetchInterval: 30_000,

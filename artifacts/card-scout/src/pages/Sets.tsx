@@ -8,6 +8,7 @@ import { Loader2, Trash2, CheckCircle2, Target, Plus, ExternalLink, ArrowRight }
 import { formatCurrency } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface SetGoal {
   id: string;
@@ -48,7 +49,7 @@ export default function Sets() {
 
   const fetchSets = async () => {
     try {
-      const r = await fetch('/api/sets', { credentials: 'include' });
+      const r = await apiFetch('/api/sets');
       if (!r.ok) throw new Error('Failed to fetch sets');
       setSets(await r.json());
     } catch (e: any) {
@@ -66,7 +67,7 @@ export default function Sets() {
     setIsLoadingCompletion(true);
     setCompletion(null);
     try {
-      const r = await fetch(`/api/sets/${id}/completion`, { credentials: 'include' });
+      const r = await apiFetch(`/api/sets/${id}/completion`);
       if (!r.ok) throw new Error('Failed to fetch completion data');
       setCompletion(await r.json());
     } catch (e: any) {
@@ -90,7 +91,7 @@ export default function Sets() {
     
     setDeletingId(id);
     try {
-      const r = await fetch(`/api/sets/${id}`, { method: 'DELETE', credentials: 'include' });
+      const r = await apiFetch(`/api/sets/${id}`, { method: 'DELETE' });
       if (!r.ok) throw new Error('Failed to delete set');
       toast.success("Set tracking removed");
       if (selected === id) setSelected(null);
@@ -320,11 +321,10 @@ function AddSetDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpen
     };
     
     try {
-      const r = await fetch('/api/sets', {
+      const r = await apiFetch('/api/sets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-        credentials: 'include'
       });
       
       if (!r.ok) {

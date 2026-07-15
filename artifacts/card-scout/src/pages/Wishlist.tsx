@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AddCardDialog } from "@/components/AddCardDialog";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function Wishlist() {
   const { data: wishlist, isLoading } = useGetWishlist();
@@ -21,7 +22,7 @@ export default function Wishlist() {
     e.stopPropagation();
     setCheckingEbayFor(cardId);
     try {
-      const res = await fetch(`/api/cards/${cardId}/ebay-comps`, { credentials: 'include' });
+      const res = await apiFetch(`/api/cards/${cardId}/ebay-comps`);
       const data = await res.json();
       setEbayData(prev => ({ ...prev, [cardId]: data }));
     } catch (err) {

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { Loader2, ArrowLeft, ShoppingCart, TrendingUp, Edit2 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function CardTimeline() {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +16,7 @@ export default function CardTimeline() {
   useEffect(() => {
     async function fetchTimeline() {
       try {
-        const res = await fetch(`/api/collection/${id}/timeline`, { credentials: "include" });
+        const res = await apiFetch(`/api/collection/${id}/timeline`);
         if (!res.ok) throw new Error("Failed to fetch timeline");
         const json = await res.json();
         

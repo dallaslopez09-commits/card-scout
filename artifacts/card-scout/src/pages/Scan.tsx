@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface EbayComps {
   medianPrice: number | null;
@@ -433,10 +434,9 @@ export default function Scan() {
   const handleConfirmCard = async (fields: CardFields) => {
     setIsSaving(true);
     try {
-      const res = await fetch("/api/cards", {
+      const res = await apiFetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           player: fields.player || undefined,
           year: fields.year ? parseInt(fields.year) : undefined,

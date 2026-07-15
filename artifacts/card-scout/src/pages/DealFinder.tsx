@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Tag, Search, ExternalLink, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiFetch } from "@/lib/apiFetch";
 
 interface DealResult {
   deals: Array<{
@@ -37,7 +38,7 @@ export default function DealFinder() {
     setIsSearching(true);
     setError(null);
     try {
-      const r = await fetch(`/api/deals/search?q=${encodeURIComponent(query)}&minDiscount=${minDiscount}`, { credentials: 'include' });
+      const r = await apiFetch(`/api/deals/search?q=${encodeURIComponent(query)}&minDiscount=${minDiscount}`);
       if (!r.ok) {
         const errorData = await r.json();
         throw new Error(errorData.error || 'Failed to search deals');

@@ -3,6 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Download, Printer, Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/apiFetch";
 
 function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -22,8 +23,8 @@ export default function Insurance() {
     async function fetchData() {
       try {
         const [collRes, summRes] = await Promise.all([
-          fetch("/api/collection", { credentials: "include" }),
-          fetch("/api/collection/summary", { credentials: "include" })
+          apiFetch("/api/collection"),
+          apiFetch("/api/collection/summary")
         ]);
         
         const collData = await collRes.json();
