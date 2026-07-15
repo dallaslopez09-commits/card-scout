@@ -22,6 +22,9 @@ interface ActiveListing {
 
 async function fetchJson(url: string): Promise<any> {
   const resp = await fetch(url, { headers: { Accept: "application/json" } });
+  if (resp.status === 503 || resp.status === 502) {
+    throw new Error(`eBay's API is temporarily unavailable (${resp.status}). Please try again in a few minutes.`);
+  }
   if (!resp.ok) throw new Error(`eBay API ${resp.status}`);
   return resp.json();
 }
