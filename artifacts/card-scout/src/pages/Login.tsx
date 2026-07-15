@@ -20,17 +20,17 @@ export default function Login() {
         <div className="lg:flex-1 bg-primary text-primary-foreground flex flex-col justify-between p-8 lg:p-16">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded shadow-sm flex items-center justify-center">
-              <span className="text-primary font-black text-xl">CS</span>
+              <span className="text-primary font-black text-sm">L&L</span>
             </div>
-            <span className="font-bold text-2xl tracking-tight">Card Scout</span>
+            <span className="font-bold text-xl tracking-tight">Legends &amp; Lunatics</span>
           </div>
 
           <div className="mt-16 lg:mt-0 space-y-6 max-w-xl">
             <h1 className="text-4xl lg:text-6xl font-bold tracking-tight leading-tight">
-              The command center for serious collectors.
+              Gonzo Grader.
             </h1>
             <p className="text-lg lg:text-xl text-primary-foreground/80 leading-relaxed font-light">
-              Track your portfolio, discover market trends, and manage your wishlist with precision. Every card, every dollar of value, all in one pristine place.
+              Track your collection, hunt live deals, and manage your wishlist like a lunatic. Every card, every dollar — all in one place.
             </p>
           </div>
 

@@ -102,7 +102,7 @@ export default function Collection() {
     });
     
     const csv = [headers.join(','), ...rows].join('\n');
-    downloadCsv(csv, `card-scout-collection-${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCsv(csv, `ll-gonzo-grader-collection-${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const filteredCollection = collection ? collection.filter(item => {

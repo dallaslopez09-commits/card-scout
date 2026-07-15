@@ -30,9 +30,9 @@ export function Shell({ children }: ShellProps) {
         <div className="h-16 flex items-center px-6 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded shadow-sm flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">CS</span>
+              <span className="text-primary-foreground font-bold text-xs">L&L</span>
             </div>
-            <span className="font-bold text-lg tracking-tight">Card Scout</span>
+            <span className="font-bold text-sm tracking-tight leading-tight">L&L Gonzo Grader</span>
           </div>
         </div>
 
@@ -67,9 +67,9 @@ export function Shell({ children }: ShellProps) {
         <header className="h-16 border-b border-border bg-card flex items-center px-4 md:hidden shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded shadow-sm flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">CS</span>
+              <span className="text-primary-foreground font-bold text-xs">L&L</span>
             </div>
-            <span className="font-bold text-lg tracking-tight">Card Scout</span>
+            <span className="font-bold text-sm tracking-tight leading-tight">L&L Gonzo Grader</span>
           </div>
         </header>
 
