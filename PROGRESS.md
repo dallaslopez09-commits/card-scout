@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-07-24. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+_2026-07-24 check: no new commits on card-scout since 2026-07-20 (last commit was this file's own creation). Investor-Dashboard could not be checked this run — this session's GitHub access is scoped to card-scout only, so its commit history is invisible from here. All items below are unchanged from the last check._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
@@ -26,6 +28,9 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 - [ ] eBay sold vs. active price badges
 - [ ] Mobile responsiveness audit
 - [ ] Empty states (Collection/Wishlist/Sets) — low priority while this stays single-user
+- [ ] Cross-link Wishlist and Deal Finder — auto-flag when a wishlist card shows up in Deal Finder results instead of relying on manual checking (both routes already exist: `wishlist.ts`, `deals.ts`)
+- [ ] Surface a "prices last checked" timestamp in the UI, sourced from `priceRefreshJob.ts` — makes staleness visible instead of implying live data
+- [ ] Card image caching/thumbnails via the existing `object-storage-web` lib, to speed up card detail and collection grid loads
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
