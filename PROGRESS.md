@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-08-01. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+_Note (2026-08-01 check): No new commits on card-scout since 2026-07-20 (last activity was this file's creation). Investor-Dashboard could not be checked this run — this session's GitHub access is scoped to card-scout only. All "In Progress" items below were spot-checked against the current codebase (no cost_basis field, no eBay OAuth/refresh_token flow, no sold-sync/archive logic found) and remain unimplemented._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
