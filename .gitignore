@@ -47,3 +47,33 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# ── Security: never commit database dumps, backups or credential files ────────
+# Raw SQL / dump formats
+*.sql
+*.dump
+*.backup
+*.bak
+*.pg_dump
+
+# Backup directories (any depth)
+backups/
+database-backups/
+db-backups/
+
+# Temporary files (already covers tmp/ but made explicit)
+tmp/
+
+# Environment and credential files
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+secrets/
+credentials/
