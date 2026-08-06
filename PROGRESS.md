@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-08-06. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+> **2026-08-06 check:** No new commits on `card-scout` since 2026-07-20 (the last one — this PROGRESS.md file itself — is 16 days old). Investor-Dashboard could not be checked this run; this session's GitHub access is scoped to `card-scout` only, so `Investor-Dashboard` commit history is unreachable from here. Verified in code that the in-progress items below are still genuinely open: no `cost_basis`/`costBasis` field anywhere in the codebase, `eBay` auth in `artifacts/api-server/src/lib/ebay.ts` is still app-level (`SECURITY-APPNAME`) rather than user OAuth, and the `tickFormatter` duplicate-export warning spot in `Dashboard.tsx` is untouched. No items moved to Confirmed Complete this run.
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
