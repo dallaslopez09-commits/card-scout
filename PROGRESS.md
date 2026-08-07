@@ -1,31 +1,58 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-08-07. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+> **2026-08-07 check:** No new commits landed on `card-scout`'s `main` in the last 24h — `main` is now **18 days stale** (still sitting at the 2026-07-20 snapshot). Investor-Dashboard still could not be checked; this session's GitHub access remains scoped to `card-scout` only.
+>
+> **Tracker regressed yesterday, reverted today.** The 2026-08-06 run based its update on stale `main` instead of the most accurate branch, which silently undid the 08-02/08-03/08-05 corrections (the "eBay CSV import built" line came back as done, and the CardTimeline/collection-value-over-time items dropped out of Confirmed Complete). This update reverts to the corrected 2026-08-05 branch (`claude/gifted-hopper-3of607`) as its base — same regression risk flagged in that branch's own notes.
+>
+> **One real, human commit found (not in the last 24h, but never logged here):** `2630f705` — "Add security exclusions to .gitignore: sql, dump, backup, env, credential files" — authored by Dallas directly on 2026-08-05, sitting on its own branch (`gitignore-security-fixes`), still unmerged. Spot-checked `main` for already-tracked `.env`/`.sql` files via code search — none found, so this is pure prevention, no existing leak to clean up.
+>
+> **18 daily-check branches now exist with zero PRs opened** (`claude/gifted-hopper-*`, 07-21 through 08-06, skipping 07-27) — see the branch-clutter idea below.
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
 - [x] Investor-Dashboard pushed to GitHub (`dallaslopez09-commits/Investor-Dashboard`)
 - [x] eBay production API credentials fixed (App ID / Cert ID auth working)
-- [x] eBay CSV import built — auto-updates inventory + current value
 - [x] Full codebase audits done on both repos (stack, schema, real vs. stubbed features documented)
+- [x] Card detail / price-history page — `CardTimeline.tsx` fetches `/api/collection/:id/timeline` and renders a real Recharts area chart, not a stub
+- [x] Collection value over time — `Dashboard.tsx` is wired to real `useGetPortfolioHistory`/`useGetCollectionSummary` hooks backed by `portfolio_snapshots`
+
+## Correction (re-verified 2026-08-05, still holds)
+- [ ] ~~eBay CSV import built — auto-updates inventory + current value~~ — **still not built.** Zero CSV parsing/import code anywhere in `routes/collection.ts`, `Collection.tsx`, `Insurance.tsx`. Only CSV code is *export*. If a working import exists somewhere else, tell Claude where; otherwise it's a real feature to build (see Backlog).
 
 ## In Progress / Just Sent to Replit
-- [ ] Cost basis integrity fix — CSV re-imports were overwriting cost_basis; should only set once, default null/unestimated, split Confirmed vs. Estimated profit reporting, add "% inventory with confirmed cost" metric
-- [ ] Real eBay OAuth (user-level, refresh token) — porting the working flow from Investor-Dashboard into Card Scout
-- [ ] Sold-item sync — 24hr auto + manual "Sync Now" button, locks in realized profit/loss at time of sale (never recalculates after), moves sold cards to an archive
+- [ ] **Cost basis integrity fix** — the cost-basis *columns* already exist (`purchasePrice`, `gradingFee`, `shippingFee`, `otherFees` in `lib/db/src/schema/collection.ts`), but there's no overwrite guard: `PUT /collection/:id` in `routes/collection.ts` (line 146) unconditionally overwrites `purchasePrice` whenever it's present in the request body. The original bug description ("CSV re-imports were overwriting cost_basis") doesn't match the code since no CSV import exists — the only way `purchasePrice` gets overwritten today is the manual edit form hitting this same `PUT` route. Worth confirming with Dallas whether the bug as experienced was actually a manual re-edit. Fix stays scoped to that handler — stop overwriting after initial set (or require an explicit "recalculate" flag), default null/unestimated, split Confirmed vs. Estimated profit reporting. `price_history.source` (`"acquired" | "ebay" | "manual"`) already exists and is set on item creation, so the Confirmed/Estimated split has its data source ready for free.
+- [ ] Real eBay OAuth (user-level, refresh token) — `routes/auth.ts` has a working OIDC authorization-code + PKCE flow with refresh-token storage (via `openid-client`), but it's built for Replit's OIDC provider, not eBay's OAuth2. Treat it as a structural reference (session storage, expiry tracking) rather than a drop-in port.
+- [ ] Sold-item sync — 24hr auto + manual "Sync Now" button, locks in realized profit/loss at time of sale (never recalculates after), moves sold cards to an archive. No schema groundwork for this yet.
 - [ ] Returns/refunds handled as a manual-review flag, not automatic reversal
 
 ## Quick Wins (queued, not yet confirmed done)
 - [ ] Deal Finder smoke test in Preview (post eBay Browse API fix)
-- [ ] Dashboard `tickFormatter` Vite duplicate-export warning fix
+- [ ] Dashboard `tickFormatter` Vite duplicate-export warning fix — `Dashboard.tsx` and `CardTimeline.tsx` both still hand-roll inline currency/date formatting in `tickFormatter` instead of reusing `formatCurrency`/`formatDate` from `src/lib/utils.ts`; still worth checking whether fixing the dedup fixes the warning too
+- [ ] **Merge or review the `gitignore-security-fixes` branch** — Dallas's own commit (`2630f705`), pure `.gitignore` hygiene, no functional risk, sitting unmerged since 08-05. Easiest possible first PR to break the "nothing ever merges" pattern below.
 
 ## Backlog / Ideas (not started)
 - [ ] **Separate P/L tab** (business-owner view) — realized profit/loss only, Confirmed vs. Estimated split carried through, flagged/pending section for returns awaiting manual adjustment, time-based totals (month/quarter/year/all-time). *Decide: scoped to Card Scout only, or built as the eventual combined view once both apps merge?*
-- [ ] Card detail page (price history chart, comps, eBay link, notes)
-- [ ] Collection value over time (sparkline/chart per card)
 - [ ] eBay sold vs. active price badges
 - [ ] Mobile responsiveness audit
 - [ ] Empty states (Collection/Wishlist/Sets) — low priority while this stays single-user
+- [ ] Wishlist ↔ Deal Finder cross-link
+- [ ] Price-check timestamp (show when a price was last refreshed)
+- [ ] Image caching for card images
+- [ ] "% inventory with confirmed cost" metric — near-free once the cost-basis Confirmed/Estimated split lands, since `price_history.source` already distinguishes acquired/manual vs. ebay
+- [ ] Manual-entry-first path — ship basic sold-item P/L tracking via manual entry before the full eBay OAuth port lands
+- [ ] Migrate eBay Finding API → Browse API (Finding API is the legacy/deprecated one)
+- [ ] Consolidate `lib/ebay.ts` and `routes/deals.ts` into one shared eBay client — both independently build near-identical Finding-API requests and duplicate median-price calculation, and neither retries on transient failures, so a single 502/503 currently fails a price-refresh item for a full 24h cycle
+- [ ] Add a minimal test harness before touching cost-basis math — zero automated tests exist anywhere in the repo (no `*.test.*`/`*.spec.*`, no `test` script in any `package.json`); start with the `PUT /collection/:id` handler specifically, since that's the one about to change
+- [ ] Build the real CSV import — genuine gap now that the old "CSV import built" claim is confirmed false
+- [ ] Decide the long-term Card Scout / Investor-Dashboard relationship (stay separate vs. eventual merge) — several items above depend on this
+- [ ] Standing-PR or direct-push decision — 18 consecutive daily runs have now hit the "no new commits, findings stuck on an orphaned branch" outcome, and one run (08-06) already regressed the tracker by building off stale `main`. Decide: (a) have Claude open a small PR each day so it's a one-click merge, (b) authorize direct pushes to `main` for this file specifically, or (c) accept the branches as an archive and periodically consolidate manually.
+
+## New this check (2026-08-07)
+- [ ] **Add CI secret-scanning (e.g. `gitleaks`)** — now that `.gitignore` excludes `sql`/`dump`/`backup`/`env`/credential-shaped files going forward, a lightweight scan on push/PR would catch anything that slips past `.gitignore` (renamed files, nested paths) before it lands, rather than relying on the ignore rules alone. Verified today that `main` currently has no tracked `.env`/`.sql` files, so this is pure prevention.
+- [ ] **Clean up the 18 orphaned `claude/gifted-hopper-*` branches** once Dallas has skimmed them for anything not already folded into this file — they're pure clutter now that this tracker file is the consolidated source of truth, and the branch list is getting hard to scan.
+- [ ] **Bias future daily-check runs to diff against the latest dated branch, not `main`**, until the standing-PR/direct-push decision above is made — that's the specific process gap that caused the 08-06 regression, and it'll keep happening otherwise.
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
