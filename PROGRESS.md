@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-08-22. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+_Check note (2026-08-22): no new commits on `card-scout` since 2026-07-20 (`4891505`) — over a month of inactivity. This session's GitHub access is scoped to `card-scout` only, so `Investor-Dashboard` commit history could not be checked; re-run with that repo in scope to cover it. Nothing below changed as a result of this check — items are carried forward as-is, confirmed still accurate against the current code._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
@@ -29,3 +31,8 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
+
+## New Ideas (from 2026-08-22 code check)
+- [ ] `sets.ts` set-completion cost total (`routes/sets.ts:81`) sums only `purchasePrice`, while `collection.ts`'s portfolio totals sum `purchasePrice + gradingFee + shippingFee + otherFees` — the Sets view will under-report true cost vs. the Collection view for any card with fees. Worth reconciling once the cost-basis fix lands.
+- [ ] `collection_items` has no `isSold`/`soldAt`/`salePrice` columns yet — the pending "Sold-item sync" work will need this schema added before the sync job/archive move can be built; flagging now since fee-tracking columns (`gradingFee`/`shippingFee`/`otherFees`) already show the intended pattern (nullable, added alongside `purchasePrice`) to follow for consistency.
+- [ ] `price_history` rows already carry a free-text `note` field for provenance (e.g. "eBay median from 8 sold comps") — the same pattern could back the "Confirmed vs. Estimated" cost-basis split: a `costBasisSource` note/enum on `collection_items` would let the UI show *why* a cost is confirmed vs. estimated, not just that it is.
