@@ -1,6 +1,6 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-07-20 (content). Last checked: 2026-08-23 — no new commits on either repo since 2026-07-20, so no status changes below. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
@@ -29,3 +29,8 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
+
+## New Ideas (from 2026-08-23 code check)
+- [ ] `collection_items` has no `soldAt` / `soldPrice` / `status` columns yet — the sold-item sync work in progress will need this schema addition before it can lock in realized P/L or move cards to an archive
+- [ ] `purchasePrice` on `collection_items` has no companion "is this confirmed or estimated" flag — worth adding an `isCostConfirmed` boolean alongside the cost-basis integrity fix already queued, so the split reporting has something to key off of
+- [ ] `portfolio_snapshots` only tracks `totalValue`/`totalCost` — once sold-item tracking exists, consider snapshotting realized vs. unrealized separately so the future P/L tab doesn't have to reconstruct history after the fact
