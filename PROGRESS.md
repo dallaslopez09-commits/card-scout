@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-09-01. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+> **Note (2026-09-01):** No commits landed on `card-scout` in the last 24 hours — in fact none since 2026-07-15 (the PROGRESS.md commit on 07-20 was tracker-only). All items below are unchanged from the last check. This session's GitHub access is also scoped to `card-scout` only, so `Investor-Dashboard` commit history could not be checked directly — Dallas should verify that repo separately or grant this session access to it.
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
