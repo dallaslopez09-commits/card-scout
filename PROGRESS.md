@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-09-16. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+_Check note (2026-09-16): No new commits on `card-scout` in the last 24h — the newest commit on `main`/`origin` is still `4891505` from 2026-07-20 (~2 months stale). Also this run's GitHub access is scoped to `card-scout` only, so `Investor-Dashboard` could not be checked — re-scope the session to include it for a full comparison. Spot-checked the "In Progress" items against the current code (no commit-history changes to trigger this, just a sanity pass): cost basis logic, real eBay OAuth, and sold-item sync are still not implemented (`cost_basis` isn't referenced anywhere outside this file; `auth.ts`/`authMiddleware.ts` are Replit's own login OIDC flow, not an eBay account link; no sold-sync/archive code exists beyond an "Unrealized Gain" label in `Collection.tsx`) — all three remain accurately listed below as not done._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
