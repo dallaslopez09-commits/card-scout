@@ -1,6 +1,8 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-09-19. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+_2026-09-19 check: no new commits on `card-scout` since 2026-07-20 (the last entry below) — nothing in this list has changed. Could not check `Investor-Dashboard` this run; this session's GitHub access is scoped to `card-scout` only._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
@@ -29,3 +31,8 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
+
+## New Ideas (from 2026-09-19 check)
+- [ ] **Sync status banner** on Dashboard — last successful eBay sync timestamp + error state, so a silently-failing OAuth/sold-item sync doesn't go unnoticed
+- [ ] **Insurance export** — since the Insurance page already exists, generate a dated PDF/CSV rider export (current value + Confirmed vs. Estimated cost basis per card) once the cost-basis integrity fix lands
+- [ ] Worth a check-in: several "In Progress" items above have been unchecked since the last commit on 2026-07-20 (~2 months) — confirm whether they're paused/blocked or just not yet pushed
