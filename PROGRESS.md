@@ -1,6 +1,16 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-09-22. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+
+> **Heads up — this tracker has been drifting from what you actually see on `main`.** The scheduled task runs daily, but each run pushes to a fresh `claude/gifted-hopper-*` branch (per its harness config) instead of `main`, and nothing has merged those back. There are ~50 such branches sitting in the repo right now, several containing PROGRESS.md updates identical in substance to this one, going back to 2026-07-20 — the date `main` has been stuck on the whole time. If you want this file kept current on `main`, either point the scheduled task at `main` directly, or periodically merge/fast-forward the latest `claude/gifted-hopper-*` branch in.
+
+## Status check — 2026-09-22
+- **No commits landed on `card-scout` in the last 24 hours** (or in the last 2+ months — the newest commit on `main` is still the 2026-07-20 PROGRESS.md add). Nothing below moves from "In Progress" to "Confirmed Complete" this run.
+- **`Investor-Dashboard` could not be checked** — this session's GitHub access is scoped to `card-scout` only, so its commit history is invisible here. If you want it covered by this same recap, the scope needs to be widened for this scheduled task.
+- Re-verified in the current code (not just claimed in this file):
+  - The three items in "In Progress / Just Sent to Replit" (cost-basis fix, eBay user OAuth, sold-item sync) have **no trace in this repo** — no `cost_basis`/`costBasis` field, no eBay OAuth/refresh-token flow, no sold-item archive logic anywhere in `artifacts/`. Whatever was "just sent to Replit" either never made it into this git history or is still sitting uncommitted on the Replit side.
+  - `GET /storage/objects/*` in `artifacts/api-server/src/routes/storage.ts` still serves any object entity with **no auth/ACL check** — the check is present only as a commented-out block (lines 139–152). Anyone who can guess or observe an object path (e.g. a card photo URL) can fetch it unauthenticated.
+  - The Dashboard `YAxis` in `artifacts/card-scout/src/pages/Dashboard.tsx` still has **`tickFormatter` passed twice** (lines 200 and 205) — the second silently wins, so this is a live duplicate-prop bug, not just a lint warning.
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
@@ -26,6 +36,9 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 - [ ] eBay sold vs. active price badges
 - [ ] Mobile responsiveness audit
 - [ ] Empty states (Collection/Wishlist/Sets) — low priority while this stays single-user
+- [ ] **Harden `/storage/objects/*`** — uncomment and wire up the ACL check in `storage.ts` (already scaffolded, just disabled) so object entities aren't unauthenticated-readable by path
+- [ ] **Minimal CI** (typecheck + lint on push) — there's no CI in this repo yet; would have caught the duplicate `tickFormatter` prop and similar issues automatically instead of relying on manual/scheduled review
+- [ ] **Reconcile Replit ↔ GitHub** — the "In Progress" items (cost basis, eBay OAuth, sold-sync) have been marked "just sent to Replit" since 2026-07-20 with zero corresponding commits here; worth checking whether that work exists uncommitted on Replit or was lost, before re-doing it
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
