@@ -1,12 +1,12 @@
 # Legends & Lunatics — Progress Tracker
 
-_Last updated: 2026-07-20. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
+_Last updated: 2026-09-27. This file is meant to be updated by the daily scheduled Claude Code task after checking recent commits, and read by Dallas as the source of truth for what's done vs. pending._
 
 ## Confirmed Complete
 - [x] Card Scout pushed to GitHub (`dallaslopez09-commits/card-scout`)
 - [x] Investor-Dashboard pushed to GitHub (`dallaslopez09-commits/Investor-Dashboard`)
 - [x] eBay production API credentials fixed (App ID / Cert ID auth working)
-- [x] eBay CSV import built — auto-updates inventory + current value
+- [x] eBay CSV import built — auto-updates inventory + current value — **⚠️ needs verification**: a repo scan of card-scout on 2026-09-27 found only CSV *export* (`Collection.tsx`, `Insurance.tsx`); no import code exists here. This may be true only in Investor-Dashboard, not card-scout — confirm which repo this shipped in.
 - [x] Full codebase audits done on both repos (stack, schema, real vs. stubbed features documented)
 
 ## In Progress / Just Sent to Replit
@@ -26,6 +26,9 @@ _Last updated: 2026-07-20. This file is meant to be updated by the daily schedul
 - [ ] eBay sold vs. active price badges
 - [ ] Mobile responsiveness audit
 - [ ] Empty states (Collection/Wishlist/Sets) — low priority while this stays single-user
+- [ ] **Migrate off eBay's Finding API** (`artifacts/api-server/src/lib/ebay.ts`, `src/routes/deals.ts`) — Finding API was sunset by eBay in Feb 2025; price-refresh job and DealFinder both still call it and may already be silently broken in production. Move to Browse API / Marketplace Insights (needs OAuth client-credentials, which would also unblock the real-OAuth backlog item above).
+- [ ] Build an actual CSV **import** for card-scout — only export exists today (`Collection.tsx`, `Insurance.tsx` `handleExportCsv`); see flagged item under Confirmed Complete.
+- [ ] Add test coverage — repo currently has zero `*.test.*`/`*.spec.*` files; several frontend `catch` blocks swallow errors with no user-facing message, which tests would catch.
 
 ## Deferred / Explicitly Shelved
 - Multi-tenant SaaS (paid subscriptions, per-user accounts, Stripe billing) — shelved until the single-user tool is validated and actually used daily
